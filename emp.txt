@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract EmployeeRecords {
+    struct Employee {
+        uint256 id;
+        string name;
+        string role;
+        uint256 salary; // in wei
+    }
+
+    Employee[] public employees;
+    mapping(uint256 => uint256) private indexOf; // id => index+1 (0 means missing)
+
+    event EmployeeAdded(uint256 id, string name);
+
+    function addEmployee(uint256 id, string calldata name, string calldata role, uint256 salary) external {
+        require(indexOf[id] == 0, "Exists");
+        employees.push(Employee(id, name, role, salary));
+        indexOf[id] = employees.length; // store index+1
+        emit EmployeeAdded(id, name);
+    }
+
+    function getEmployee(uint256 id) external view returns (Employee memory) {
+        uint256 idx = indexOf[id];
+        require(idx != 0, "Not found");
+        return employees[idx - 1];
+    }
+
+    function totalEmployees() external view returns (uint256) {
+        return employees.length;
+    }
+}
+
+
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract StudentRecords {
+    struct Student {
+        uint256 id;
+        string name;
+        uint8 grade;
+    }
+
+    Student[] public students;
+    mapping(uint256 => bool) public exists;
+
+    event StudentAdded(uint256 id, string name, uint8 grade);
+
+    // Add student
+    function addStudent(uint256 id, string calldata name, uint8 grade) external {
+        require(!exists[id], "Already exists");
+        students.push(Student(id, name, grade));
+        exists[id] = true;
+        emit StudentAdded(id, name, grade);
+    }
+
+    // Get student by index in array
+    function getStudentByIndex(uint256 index) external view returns (Student memory) {
+        require(index < students.length, "Index out");
+        return students[index];
+    }
+
+    // Count
+    function studentCount() external view returns (uint256) {
+        return students.length;
+    }
+
+    // Simple fallback to accept Ether and do nothing else
+    receive() external payable { }
+    fallback() external payable { }
+}
+

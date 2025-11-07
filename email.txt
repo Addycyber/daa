@@ -1,0 +1,29 @@
+# cell 1: imports
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import LinearSVC
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score
+
+df = pd.read_csv("emails.csv")   # expects columns 'text' and 'spam' (spam:1/0 or label column)
+# adjust if column names differ
+texts = df['text'].astype(str)
+labels = df['spam'].map({ 'spam':1, 'ham':0 }) if df['spam'].dtype==object else df['spam']
+
+# cell 2: features & split
+vec = TfidfVectorizer(max_features=3000, stop_words='english')
+X = vec.fit_transform(texts)
+X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=0.2, random_state=0)
+# cell 3: train & evaluate KNN and SVM
+knn = KNeighborsClassifier(n_neighbors=5); knn.fit(X_train, y_train)
+svm = LinearSVC(max_iter=5000); svm.fit(X_train, y_train)
+
+for name, model in [("KNN", knn), ("SVM", svm)]:
+    ypred = model.predict(X_test)
+    cm = confusion_matrix(y_test, ypred)
+    acc = accuracy_score(y_test, ypred)
+    prec = precision_score(y_test, ypred)
+    rec = recall_score(y_test, ypred)
+    print(name, "acc", round(acc,3), "prec", round(prec,3), "recall", round(rec,3))
+    print("Confusion matrix:\n", cm)

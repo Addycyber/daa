@@ -1,0 +1,38 @@
+# cell 1: imports & load
+import pandas as pd, numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.metrics import confusion_matrix, accuracy_score
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+df = pd.read_csv("Churn_Modelling.csv")
+# Example features: CreditScore, Geography, Gender, Age, Tenure, Balance, NumOfProducts, HasCrCard, IsActiveMember, EstimatedSalary, Exited
+df = df.dropna()
+y = df['Exited']
+X = df[['CreditScore','Geography','Gender','Age','Tenure','Balance','NumOfProducts','HasCrCard','IsActiveMember','EstimatedSalary']]
+# cell 2: preprocess (simple)
+cat_cols = ['Geography','Gender']
+num_cols = [c for c in X.columns if c not in cat_cols]
+
+preprocessor = ColumnTransformer([
+    ("num", StandardScaler(), num_cols),
+    ("cat", OneHotEncoder(sparse=False, handle_unknown="ignore"), cat_cols)
+])
+X_proc = preprocessor.fit_transform(X)
+X_train, X_test, y_train, y_test = train_test_split(X_proc, y, test_size=0.2, random_state=1)
+# cell 3: build simple NN
+model = models.Sequential([
+    layers.Input(shape=(X_train.shape[1],)),
+    layers.Dense(32, activation='relu'),
+    layers.Dropout(0.2),
+    layers.Dense(16, activation='relu'),
+    layers.Dense(1, activation='sigmoid')
+])
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+model.fit(X_train, y_train, validation_split=0.1, epochs=20, batch_size=32, verbose=1)
+# cell 4: evaluate
+pred = (model.predict(X_test) > 0.5).astype(int)
+print("Accuracy:", accuracy_score(y_test, pred))
+print("Confusion matrix:\n", confusion_matrix(y_test, pred))
